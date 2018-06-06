@@ -271,7 +271,6 @@ combinefunc <- function(olddat,newdat,hits="TRUE",rm_reference=NA,final=FALSE){
 }
 
 # function to aggregate data for coins with multiple search terms
-dat <- fullhitsdat
 aggcoinfunc <- function(dat,coindf,hits=TRUE){
   dat <- merge(dat,coindf[,c("searchterm","CoinName")],by.x="searchterm",by.y="searchterm",all.x=T)
   
@@ -307,7 +306,6 @@ aggcoinfunc <- function(dat,coindf,hits=TRUE){
 }
 
 # function to aggregate to hourly level data more than 30 days old
-dat <- hitsdatE
 aggolddat <- function(dat){
   dat$time <- as.POSIXct(dat$time)
   now <- Sys.time()
@@ -409,16 +407,18 @@ geturls <- function(dat){
 
 # time options are ("now 1-H","now 4-H","now 1-d","now 7-d","today 1-m","today 12-m")
 
-# loop to get and save historical data (CAREFUL - will overwrite previously saved data)
-
-# load coindf
-coindf <- read.csv("~/Dropbox/Meltwater/coindf.csv")
-con <- dbConnect(RMySQL::MySQL(), user="root",dbname="meltwater") # creates connection to MySQL
-coindf <- dbReadTable(con, "coindf")
-
 ########################################################################################################################
+# loop to get and save last month worth of historical data (CAREFUL - will overwrite previously saved data)
+
 # this loop climbs by 4 because we scrape google info on five coins at a time, and one is always a reference coin
 for(i in seq(2,nrow(coindf[-which(coindf$CoinName=="Bitcoin"),]),4)){
+  
+  if(i==2){
+    # load coindf
+    coindf <- read.csv("~/Dropbox/Meltwater/coindf.csv")
+    con <- dbConnect(RMySQL::MySQL(), user="root",dbname="meltwater") # creates connection to MySQL
+    coindf <- dbReadTable(con, "coindf")
+  }
   
   print(i)
 
@@ -550,7 +550,7 @@ for(i in seq(2,nrow(coindf[-which(coindf$CoinName=="Bitcoin"),]),4)){
 ########################################################################################################################
 
 ########################################################################################################################
-# loop to update data 
+# loop to update data with last 24 hours or 4 hours worth of data, depending on interval since last scrape
 for(h in 1:10000){
   
   # load existing data
